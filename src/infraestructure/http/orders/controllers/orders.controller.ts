@@ -25,6 +25,12 @@ import {
 import { buildEndpoint } from 'src/common/builders';
 import { GetOrderDetailUseCase } from 'src/application/orders/use-cases/order-details.usecase';
 import { ValidateCredentialsGuard } from 'src/common/guards';
+import {
+  ApiListOrders,
+  ApiIngestOrder,
+  ApiUpdateOrderStatus,
+  ApiGetOrderDetail,
+} from 'src/common/decorators/swagger/orders';
 
 @Controller()
 export class OrdersController {
@@ -35,17 +41,19 @@ export class OrdersController {
     private readonly getOrderDetail: GetOrderDetailUseCase,
   ) {}
 
+  @ApiListOrders()
   @Get(buildEndpoint('GET_ORDER_LIST_V1').fullPath)
   getOrders(@Query(new ZodValidationPipe(GetOrdersDto)) query: IGetOrdersDto) {
     return this.listOrders.execute(query);
   }
 
   @UseGuards(ValidateCredentialsGuard)
+  @ApiIngestOrder()
   @Post(buildEndpoint('INGEST_ORDER_V1').fullPath)
   ingest(@Body(new ZodValidationPipe(IngestOrderDto)) body: IIngestOrderDto) {
     return this.ingestOrder.execute(body);
   }
-
+  @ApiUpdateOrderStatus()
   @Patch(buildEndpoint('UPDATE_ORDER_STATUS_V1').fullPath)
   update(
     @Param('id') id: string,
@@ -58,6 +66,7 @@ export class OrdersController {
     });
   }
 
+  @ApiGetOrderDetail()
   @Get(buildEndpoint('GET_ORDER_DETAIL_V1').fullPath)
   getDetail(@Param('id') id: string) {
     return this.getOrderDetail.execute(id);
