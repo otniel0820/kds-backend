@@ -4,7 +4,6 @@ import type { IErrorKey } from 'src/common/dictionaries/errors';
 type Rule = {
   match: (e: Error) => boolean;
   key: IErrorKey;
-  // opcional: extraer details del mensaje
   details?: (e: Error) => Record<string, unknown>;
 };
 
@@ -14,7 +13,6 @@ const RULES: Rule[] = [
     key: 'KDS_ORDER_E0001',
   },
   {
-    // tu dominio hoy lanza: "Invalid transition from X to Y"
     match: (e) => /^Invalid transition from .+ to .+$/.test(e.message),
     key: 'KDS_ORDER_E0002',
     details: (e) => ({ reason: e.message }),
