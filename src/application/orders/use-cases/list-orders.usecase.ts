@@ -1,27 +1,34 @@
 import { OrderEntity, OrderStatus } from 'src/domain/orders';
 import { OrdersRepositoryPort } from '../ports/order-repository.port';
 import { OrderListDTO } from '../dtos';
+import { buildResponse } from 'src/common/builders/response.builder';
+import { IResponse } from 'src/common/schemas';
 
 export class ListOrdersUseCase {
   constructor(private readonly repo: OrdersRepositoryPort) {}
 
-  async execute(filter?: { status?: OrderStatus[] }): Promise<OrderListDTO[]> {
+  async execute(filter?: {
+    status?: OrderStatus[];
+  }): Promise<IResponse<OrderListDTO[]>> {
     const orders = await this.repo.findByFilter({
       status: filter?.status,
     });
 
-    return orders.map((order) => {
-      const p = order.toPrimitives();
+    return buildResponse(
+      'KDS_ORD_R0003',
+      orders.map((order) => {
+        const p = order.toPrimitives();
 
-      return {
-        id: p.id!,
-        source: p.source,
-        displayNumber: p.displayNumber,
-        status: p.status,
-        priority: p.priority,
-        activeTimer: this.resolveActiveTimer(p),
-      };
-    });
+        return {
+          id: p.id!,
+          source: p.source,
+          displayNumber: p.displayNumber,
+          status: p.status,
+          priority: p.priority,
+          activeTimer: this.resolveActiveTimer(p),
+        };
+      }),
+    );
   }
 
   private resolveActiveTimer(
