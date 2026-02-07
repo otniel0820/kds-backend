@@ -20,11 +20,11 @@ export class OrderMongoModel {
   @Prop({ required: true })
   source!: string;
 
-  @Prop({ required: true, alias: 'external_id' })
-  externalId!: string;
+  @Prop({ required: true })
+  external_id!: string;
 
-  @Prop({ required: true, alias: 'display_number' })
-  displayNumber!: string;
+  @Prop({ required: true })
+  display_number!: string;
 
   @Prop({ required: true, enum: OrderStatus })
   status!: OrderStatus;
@@ -36,17 +36,17 @@ export class OrderMongoModel {
   })
   priority!: OrderPriority;
 
-  @Prop({ required: false, alias: 'customer_name' })
-  customerName?: string;
+  @Prop({ required: false })
+  customer_name?: string;
 
-  @Prop({ required: false, alias: 'customer_phone' })
-  customerPhone?: string;
+  @Prop({ required: false })
+  customer_phone?: string;
 
-  @Prop({ required: false, alias: 'delivery_address' })
-  deliveryAddress?: string;
+  @Prop({ required: false })
+  delivery_address?: string;
 
-  @Prop({ required: false, alias: 'courier_name' })
-  courierName?: string;
+  @Prop({ required: false })
+  courier_name?: string;
 
   @Prop({ required: false })
   notes?: string;
@@ -87,6 +87,6 @@ export class OrderMongoModel {
 
 export const OrderMongoSchema = SchemaFactory.createForClass(OrderMongoModel);
 
-OrderMongoSchema.index({ source: 1, externalId: 1 }, { unique: true });
+OrderMongoSchema.index({ source: 1, external_id: 1 }, { unique: true });
 OrderMongoSchema.index({ status: 1, created_at: -1 });
-OrderMongoSchema.index({ displayNumber: 1 });
+OrderMongoSchema.index({ display_number: 1 });
