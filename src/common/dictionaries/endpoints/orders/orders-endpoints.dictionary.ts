@@ -14,6 +14,11 @@ export const ordersEndpoints = {
     version: 'v1',
     description: 'Update order status',
   },
+  GET_ORDER_DETAIL_V1: {
+    path: 'order/details/:id',
+    version: 'v1',
+    description: 'Get order detail',
+  },
 } as const;
 
 export type IEndpointKey = keyof typeof ordersEndpoints;
