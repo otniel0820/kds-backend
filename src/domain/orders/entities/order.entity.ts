@@ -42,6 +42,13 @@ export class OrderEntity {
     return { ...this.props };
   }
 
+  withDisplayNumber(displayNumber: string): OrderEntity {
+    return new OrderEntity({
+      ...this.props,
+      displayNumber,
+    });
+  }
+
   transitionTo(next: OrderStatus): OrderEntity {
     assertOrderTransition(this.props.status, next);
 

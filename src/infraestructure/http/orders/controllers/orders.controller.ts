@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-call */
 import {
   Controller,
   Get,
@@ -7,6 +6,7 @@ import {
   Param,
   Query,
   Body,
+  UseGuards,
 } from '@nestjs/common';
 import {
   IngestOrderUseCase,
@@ -23,6 +23,8 @@ import {
   type IUpdateOrderStatusDto,
 } from '../dtos';
 import { buildEndpoint } from 'src/common/builders';
+import { GetOrderDetailUseCase } from 'src/application/orders/use-cases/order-details.usecase';
+import { ValidateCredentialsGuard } from 'src/common/guards';
 
 @Controller()
 export class OrdersController {
@@ -30,6 +32,7 @@ export class OrdersController {
     private readonly ingestOrder: IngestOrderUseCase,
     private readonly listOrders: ListOrdersUseCase,
     private readonly updateStatus: UpdateOrderStatusUseCase,
+    private readonly getOrderDetail: GetOrderDetailUseCase,
   ) {}
 
   @Get(buildEndpoint('GET_ORDER_LIST_V1').fullPath)
@@ -37,6 +40,7 @@ export class OrdersController {
     return this.listOrders.execute(query);
   }
 
+  @UseGuards(ValidateCredentialsGuard)
   @Post(buildEndpoint('INGEST_ORDER_V1').fullPath)
   ingest(@Body(new ZodValidationPipe(IngestOrderDto)) body: IIngestOrderDto) {
     return this.ingestOrder.execute(body);
@@ -48,10 +52,14 @@ export class OrdersController {
     @Body(new ZodValidationPipe(UpdateOrderStatusDto))
     body: IUpdateOrderStatusDto,
   ) {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-member-access
     return this.updateStatus.execute({
       id,
       toStatus: body.toStatus,
     });
+  }
+
+  @Get(buildEndpoint('GET_ORDER_DETAIL_V1').fullPath)
+  getDetail(@Param('id') id: string) {
+    return this.getOrderDetail.execute(id);
   }
 }
