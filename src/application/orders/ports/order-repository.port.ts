@@ -1,6 +1,6 @@
 import { OrderEntity } from 'src/domain/orders';
 import { OrderStatus } from 'src/domain/orders';
-import { PipelineStage } from 'mongoose';
+import { OrderDetailDto } from '../dtos/order-details.dto';
 
 export type OrderFilter = {
   id?: string;
@@ -20,5 +20,5 @@ export interface OrdersRepositoryPort {
   findByFilter(filter: OrderFilter): Promise<OrderEntity[]>;
   create(order: OrderEntity): Promise<OrderEntity>;
   update(order: OrderEntity): Promise<OrderEntity>;
-  aggregate<T = unknown>(pipeline: PipelineStage[]): Promise<T[]>;
+  findDetailProjection(id: string): Promise<OrderDetailDto | null>;
 }
