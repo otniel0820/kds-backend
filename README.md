@@ -1,98 +1,249 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# 🧾 KDS Orders Service – Backend
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+## 📌 Descripción de la solución
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+Este proyecto es un servicio backend para la gestión de órdenes (Orders Service), diseñado bajo principios de **Clean Architecture** y desacoplado del framework.
 
-## Description
+El sistema permite:
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+- Ingestar órdenes externas (webhook protegido con Basic Auth)
+- Listar órdenes con filtros por estado
+- Obtener detalle de una orden (proyección optimizada)
+- Actualizar el estado de una orden con control de transiciones válidas
 
-## Project setup
+El servicio implementa:
 
+- Arquitectura hexagonal (Ports & Adapters)
+- Casos de uso desacoplados de NestJS
+- Validación con Zod
+- Sistema de errores centralizado
+- Swagger documentado manualmente con DTOs explícitos
+- Guards desacoplados del dominio
+- Filtro global de errores con mapeo por reglas
+
+---
+
+# 🏗 Arquitectura
+
+El proyecto sigue una estructura basada en capas:
 ```bash
-$ pnpm install
+src/
+├── application/ → Casos de uso
+├── domain/ → Entidades y lógica de negocio
+├── infrastructure/ → HTTP, repositorios, adaptadores
+├── common/ → Builders, schemas, errores, guards
+├── config/ → Configuración (env, swagger)
+```
+## Principios aplicados
+
+- El dominio no conoce NestJS.
+- La aplicación no lanza excepciones HTTP.
+- Los errores se transforman en el filtro global.
+- Los controladores solo orquestan.
+- Swagger no contamina la lógica de negocio.
+- Las respuestas siguen un contrato uniforme (`IResponse<T>`).
+
+---
+
+# 🚀 Instrucciones para ejecutar el proyecto
+
+## 1️⃣ Instalar dependencias
+```bash
+pnpm install
+```
+## 2️⃣ Variables de entorno
+
+Crear un archivo .env:
+```bash
+PORT=3000
+NEST_NODE_ENV=DEVELOPMENT
+NEST_MONGO_URL=UrlDeBD
+NEST_USER_NAME_GLOVO=your_user
+NEST_PASSWORD_GLOVO=your_password
+```
+## 3️⃣ Ejecutar en desarrollo
+```bash
+pnpm run start:dev
 ```
 
-## Compile and run the project
+## 5️⃣ Swagger
 
+Disponible en:
 ```bash
-# development
-$ pnpm run start
-
-# watch mode
-$ pnpm run start:dev
-
-# production mode
-$ pnpm run start:prod
+http://localhost:3000/docs
 ```
 
-## Run tests
+## 🔐 Seguridad
 
+El endpoint de ingesta de órdenes está protegido mediante:
+
+Basic Authentication
+Comparación segura con timingSafeEqual
+Guard independiente del dominio
+Manejo centralizado de errores de autenticación
+
+## 📦 Endpoints
+
+🔹 Ingest Order
+POST /orders
+Protegido con Basic Auth
+Valida DTO con Zod
+Retorna IResponse<OrderDto>
+
+🔹 List Orders
+GET /orders
+Filtro opcional por status
+Retorna IResponse<OrderListDTO[]>
+
+🔹 Get Order Detail
+GET /orders/:id
+Retorna proyección optimizada
+Error 404 si no existe
+
+🔹 Update Order Status
+PATCH /orders/:id
+Valida transición de estado
+409 si transición inválida
+404 si no existe
+400 si DTO inválido
+
+## 📐 Contrato de Respuesta
+
+Todas las respuestas exitosas siguen el formato:
 ```bash
-# unit tests
-$ pnpm run test
-
-# e2e tests
-$ pnpm run test:e2e
-
-# test coverage
-$ pnpm run test:cov
+{
+  "status": number,
+  "code": "string",
+  "message": "string",
+  "data": {}
+}
 ```
 
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
-
+En el caso de actualizaciones sin contenido:
 ```bash
-$ pnpm install -g @nestjs/mau
-$ mau deploy
+{
+  "status": 200,
+  "code": "KDS-ORD-R0004",
+  "message": "Order status updated successfully"
+}
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+❌ Contrato de Error
 
-## Resources
+Todos los errores siguen el formato:
+```bash
+{
+  "status": number,
+  "code": "string",
+  "message": "string",
+  "details": {},
+  "timestamp": "ISO date"
+}
+```
 
-Check out a few resources that may come in handy when working with NestJS:
+Ejemplo (409):
+```bash
+{
+  "status": 409,
+  "code": "KDS-ORDER-E0002",
+  "message": "Invalid order status transition",
+  "details": {
+    "displayMessage": {
+      "ref": "140219-020103-050002",
+      "en": "Invalid order status transition",
+      "es": "Transición de estado de pedido no válida"
+    },
+    "reason": "Invalid transition from CONFIRMED to PICKED_UP"
+  },
+  "timestamp": "2026-02-07T21:15:37.014Z"
+}
+```
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+# ⚙️ Decisiones técnicas relevantes
 
-## Support
+## 1️⃣ Clean Architecture/Arquitectura Hexagonal
+- El dominio y los casos de uso están desacoplados de:
+ - NestJS
+ - Swagger
+ - Infraestructura HTTP
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+Permite:
+- Testear lógica sin framework
+- Reemplazar adaptadores
+- Mantener el dominio puro
 
-## Stay in touch
+## 2️⃣ Validación con Zod
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+#### Se eligió Zod porque:
+- Mejor inferencia de tipos
+- Validación declarativa
+- Control explícito de errores
+- Integración limpia con pipes personalizados
 
-## License
+## 3️⃣ Sistema propio de respuestas y errores
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+#### Se implementó:
+- buildResponse
+- buildError
+- Diccionarios centralizados
+- Resolución por reglas en el filtro global
+
+#### Ventajas:
+- Uniformidad en respuestas
+- Independencia del framework
+- Preparado para internacionalización
+- Códigos estandarizados
+
+## 4️⃣ Swagger desacoplado
+
+#### La documentación:
+- Usa DTOs exclusivos para Swagger
+- No contamina DTOs de negocio
+- Refleja exactamente el contrato runtime
+
+## 5️⃣ Control de transiciones de estado
+
+- Las reglas de transición están en el dominio.
+- Si una transición es inválida:
+  - Se lanza error de dominio
+  - El filtro global lo transforma en 409
+
+# 🔍 Posibles mejoras
+
+## 1️⃣ Tests automatizados
+
+- Unit tests para casos de uso
+- Integration tests para endpoints
+
+## 2️⃣ Wrapper Swagger genérico
+
+Reducir repetición creando un wrapper reutilizable para IResponse<T>.
+
+## 3️⃣ Logging estructurado
+
+#### Agregar:
+
+- Correlation ID
+- Logs por capa
+- Logger centralizado
+
+## 4️⃣ Observabilidad
+
+#### Integración futura con:
+- OpenTelemetry
+- Health checks
+- Métricas
+
+# 🧠 Conclusión
+
+#### Este backend está diseñado para:
+
+- Escalar
+- Ser mantenible
+- Estar desacoplado
+- Ser testeable
+- Tener contratos claros
+- Mantener independencia del framework
+
+No es un CRUD simple.
+Es una implementación con arquitectura formal y estándares definidos.
