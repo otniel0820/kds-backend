@@ -1,0 +1,77 @@
+import { OrderStatus } from '../value-objects/order-state.vo';
+import { OrderPriority } from '../value-objects/order-priority.vo';
+import { OrderTimers } from '../value-objects';
+import { assertOrderTransition, applyOrderTimer } from '../services';
+
+export type OrderItem = { sku: string; name: string; qty: number };
+
+export type OrderPrimitives = {
+  id?: string;
+  source: string;
+  externalId: string;
+  displayNumber: string;
+  priority: OrderPriority;
+  customerName?: string;
+  customerPhone?: string;
+  deliveryAddress?: string;
+  courierName?: string;
+  notes?: string;
+  status: OrderStatus;
+  items: OrderItem[];
+  timers: OrderTimers;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+export class OrderEntity {
+  private props: OrderPrimitives;
+
+  constructor(props: OrderPrimitives) {
+    this.props = props;
+  }
+
+  get id() {
+    return this.props.id;
+  }
+
+  get status() {
+    return this.props.status;
+  }
+
+  toPrimitives(): OrderPrimitives {
+    return { ...this.props };
+  }
+
+  transitionTo(next: OrderStatus): OrderEntity {
+    assertOrderTransition(this.props.status, next);
+
+    const now = new Date();
+
+    const updatedTimers = applyOrderTimer(this.props.timers, next, now);
+    let courierName = this.props.courierName;
+
+    if (next === OrderStatus.PICKED_UP && !courierName) {
+      courierName = this.generateCourierName();
+    }
+
+    return new OrderEntity({
+      ...this.props,
+      status: next,
+      timers: updatedTimers,
+      courierName,
+      updatedAt: now,
+    });
+  }
+
+  private generateCourierName(): string {
+    const couriers = [
+      'Carlos Rodriguez',
+      'Ana Farias',
+      'Luis Salinas',
+      'Sofía García',
+      'Jorge Martínez',
+    ];
+    const index = Math.floor(Math.random() * couriers.length);
+    return couriers[index];
+  }
+}
