@@ -11,6 +11,7 @@ import {
   OrderMongoModel,
   OrderMongoSchema,
 } from './infraestructure/persistence/mongo/schemas/order.mongo.schema';
+import { GetOrderDetailUseCase } from './application/orders/use-cases/order-details.usecase';
 
 @Module({
   imports: [
@@ -42,6 +43,12 @@ import {
       provide: UpdateOrderStatusUseCase,
       useFactory: (repo: OrdersRepositoryPort) =>
         new UpdateOrderStatusUseCase(repo),
+      inject: [ORDERS_REPOSITORY],
+    },
+    {
+      provide: GetOrderDetailUseCase,
+      useFactory: (repo: OrdersRepositoryPort) =>
+        new GetOrderDetailUseCase(repo),
       inject: [ORDERS_REPOSITORY],
     },
   ],
