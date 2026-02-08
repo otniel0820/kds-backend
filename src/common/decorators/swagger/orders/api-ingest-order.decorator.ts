@@ -8,7 +8,6 @@ import {
 } from '@nestjs/swagger';
 import {
   IngestOrderSwaggerDto,
-  IngestOrderResponseSwaggerDto,
   ValidationErrorSwaggerDto,
   AuthErrorSwaggerDto,
   InternalServerErrorSwaggerDto,
@@ -31,9 +30,7 @@ export function ApiIngestOrder() {
     }),
 
     ApiResponse({
-      status: 201,
-      description: 'Order ingested successfully',
-      type: IngestOrderResponseSwaggerDto,
+      status: 204,
     }),
 
     ApiResponse({
