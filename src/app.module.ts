@@ -12,6 +12,12 @@ import {
   OrderMongoSchema,
 } from './infraestructure/persistence/mongo/schemas/order.mongo.schema';
 import { GetOrderDetailUseCase } from './application/orders/use-cases/order-details.usecase';
+import { OrderEventsAdapter } from './infraestructure/websocket/orders.event.adapter';
+import { OrdersGateway } from './infraestructure/websocket/orders.gateway';
+import {
+  ORDER_EVENTS_PORT,
+  OrderEventsPort,
+} from './application/orders/ports/order-events.port';
 
 @Module({
   imports: [
@@ -24,15 +30,22 @@ import { GetOrderDetailUseCase } from './application/orders/use-cases/order-deta
   ],
   controllers: [OrdersController],
   providers: [
+    OrdersGateway,
+    OrderEventsAdapter,
     OrdersMongoRepository,
     {
       provide: ORDERS_REPOSITORY,
       useExisting: OrdersMongoRepository,
     },
     {
+      provide: ORDER_EVENTS_PORT,
+      useExisting: OrderEventsAdapter,
+    },
+    {
       provide: IngestOrderUseCase,
-      useFactory: (repo: OrdersRepositoryPort) => new IngestOrderUseCase(repo),
-      inject: [ORDERS_REPOSITORY],
+      useFactory: (repo: OrdersRepositoryPort, events: OrderEventsPort) =>
+        new IngestOrderUseCase(repo, events),
+      inject: [ORDERS_REPOSITORY, ORDER_EVENTS_PORT],
     },
     {
       provide: ListOrdersUseCase,
