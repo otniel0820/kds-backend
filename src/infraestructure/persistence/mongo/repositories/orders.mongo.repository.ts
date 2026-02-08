@@ -66,7 +66,7 @@ export class OrdersMongoRepository implements OrdersRepositoryPort {
   private async generateDisplayNumber(): Promise<string> {
     const last = await this.model
       .findOne({})
-      .sort({ displayNumber: -1 })
+      .sort({ display_number: -1 })
       .lean()
       .exec();
 

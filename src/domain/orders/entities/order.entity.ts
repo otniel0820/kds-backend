@@ -19,8 +19,8 @@ export type OrderPrimitives = {
   status: OrderStatus;
   items: OrderItem[];
   timers: OrderTimers;
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt?: Date;
+  updatedAt?: Date;
 };
 
 export class OrderEntity {
@@ -70,6 +70,36 @@ export class OrderEntity {
     });
   }
 
+  static createFromIngest(input: {
+    source: string;
+    externalId: string;
+    priority?: OrderPriority;
+    customerName?: string;
+    customerPhone?: string;
+    deliveryAddress?: string;
+    notes?: string;
+    items: OrderItem[];
+  }): OrderEntity {
+    const now = new Date();
+
+    return new OrderEntity({
+      source: input.source,
+      externalId: input.externalId,
+      displayNumber: OrderEntity.generateDisplayNumber(),
+      priority: input.priority ?? OrderPriority.NORMAL,
+      customerName: input.customerName,
+      customerPhone: input.customerPhone,
+      deliveryAddress: input.deliveryAddress,
+      notes: input.notes,
+      status: OrderStatus.RECEIVED,
+      items: input.items,
+      timers: {
+        placedAt: now,
+      },
+      createdAt: now,
+      updatedAt: now,
+    });
+  }
   private generateCourierName(): string {
     const couriers = [
       'Carlos Rodriguez',
@@ -80,5 +110,9 @@ export class OrderEntity {
     ];
     const index = Math.floor(Math.random() * couriers.length);
     return couriers[index];
+  }
+
+  private static generateDisplayNumber(): string {
+    return `#${Date.now()}`;
   }
 }

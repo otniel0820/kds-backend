@@ -7,6 +7,7 @@ import {
   Query,
   Body,
   UseGuards,
+  HttpCode,
 } from '@nestjs/common';
 import {
   IngestOrderUseCase,
@@ -50,9 +51,13 @@ export class OrdersController {
   @UseGuards(ValidateCredentialsGuard)
   @ApiIngestOrder()
   @Post(buildEndpoint('INGEST_ORDER_V1').fullPath)
-  ingest(@Body(new ZodValidationPipe(IngestOrderDto)) body: IIngestOrderDto) {
-    return this.ingestOrder.execute(body);
+  @HttpCode(204)
+  async ingest(
+    @Body(new ZodValidationPipe(IngestOrderDto)) body: IIngestOrderDto,
+  ) {
+    await this.ingestOrder.execute(body);
   }
+
   @ApiUpdateOrderStatus()
   @Patch(buildEndpoint('UPDATE_ORDER_STATUS_V1').fullPath)
   update(
