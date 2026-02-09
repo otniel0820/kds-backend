@@ -26,4 +26,42 @@ export const ordersErrors = {
       },
     },
   },
+  KDS_ORDER_E0003: {
+    status: HttpStatus.CONFLICT,
+    code: 'KDS-ORDER-E0003',
+    message: 'Order already exists',
+    details: {
+      displayMessage: {
+        ref: '140219-020103-050003',
+        en: 'Order already exists',
+        es: 'El pedido ya existe',
+      },
+    },
+  },
+
+  KDS_ORDER_E0004: {
+    status: HttpStatus.BAD_REQUEST,
+    code: 'KDS-ORDER-E0004',
+    message: 'Invalid partner slug',
+    details: {
+      displayMessage: {
+        ref: '140219-020103-050004',
+        en: 'Invalid partner slug',
+        es: 'Slug de partner inválido',
+      },
+    },
+  },
+
+  KDS_ORDER_E0005: {
+    status: HttpStatus.BAD_REQUEST,
+    code: 'KDS-ORDER-E0005',
+    message: 'Invalid product slug',
+    details: {
+      displayMessage: {
+        ref: '140219-020103-050005',
+        en: 'Invalid product slug',
+        es: 'Slug de producto inválido',
+      },
+    },
+  },
 } as const satisfies Record<string, IError>;

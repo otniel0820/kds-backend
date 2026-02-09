@@ -15,27 +15,23 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     const ctx = host.switchToHttp();
     const res = ctx.getResponse<Response>();
 
-    // Si ya es HttpException, no lo tocamos
     if (exception instanceof HttpException) {
       const status = exception.getStatus();
       const body = exception.getResponse();
       return res.status(status).json(body);
     }
 
-    // Solo procesamos Errors
     const errObj =
       exception instanceof Error ? exception : new Error('UNKNOWN');
 
-    // Resolver transversal
     const resolved = resolveAppError(errObj);
     if (resolved) {
       return res.status(resolved.status).json({
         ...resolved,
-        timestamp: new Date(), // opcional
+        timestamp: new Date(),
       });
     }
 
-    // Fallback sistema
     const sys = buildError('KDS_SYS_E0000', {
       originalMessage: errObj.message,
     });

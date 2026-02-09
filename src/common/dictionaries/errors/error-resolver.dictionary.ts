@@ -17,6 +17,19 @@ const RULES: Rule[] = [
     key: 'KDS_ORDER_E0002',
     details: (e) => ({ reason: e.message }),
   },
+
+  {
+    match: (e) => e.message === 'KDS_ORDER_E0003',
+    key: 'KDS_ORDER_E0003',
+  },
+  {
+    match: (e) => e.message === 'KDS_ORDER_E0004',
+    key: 'KDS_ORDER_E0004',
+  },
+  {
+    match: (e) => e.message === 'KDS_ORDER_E0005',
+    key: 'KDS_ORDER_E0005',
+  },
 ];
 
 export function resolveAppError(e: Error) {
