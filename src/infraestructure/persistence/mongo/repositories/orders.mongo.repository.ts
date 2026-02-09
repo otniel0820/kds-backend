@@ -9,6 +9,8 @@ import {
 import { buildOrderDetailPipeline } from '../piplines';
 import { OrderPersistenceMapper } from '../mappers';
 import { OrderDetailDto } from 'src/application/orders/dtos/order-details.dto';
+import { OrderListLeanDoc } from '../types';
+import { OrderListDto } from 'src/application/orders/dtos';
 
 export class OrdersMongoRepository implements OrdersRepositoryPort {
   constructor(
@@ -59,10 +61,48 @@ export class OrdersMongoRepository implements OrdersRepositoryPort {
     const result = await this.model.aggregate<OrderDetailDto>(
       buildOrderDetailPipeline(id),
     );
-
     return result[0] ?? null;
   }
 
+  async findList(
+    filter: OrderFilter,
+  ): Promise<{ orders: OrderListDto[]; total: number }> {
+    const q: Record<string, unknown> = {};
+
+    if (filter.id) q._id = filter.id;
+    if (filter.source) q.source = filter.source;
+    if (filter.externalId) q.external_id = filter.externalId;
+    if (filter.status?.length) q.status = { $in: filter.status };
+
+    const limit = filter.limit ?? 20;
+    const skip = filter.skip ?? 0;
+
+    const docs = (await this.model
+      .find(q)
+      .populate<{ partner?: { name: string; image: string } }>({
+        path: 'partner',
+        select: 'name image',
+      })
+      .sort({ created_at: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean()
+      .exec()) as OrderListLeanDoc[];
+
+    const total = await this.model.countDocuments(q);
+
+    const data: OrderListDto[] = docs.map((doc) => ({
+      id: doc._id.toString(),
+      partnerName: doc.partner?.name,
+      partnerImage: doc.partner?.image,
+      displayNumber: doc.display_number,
+      status: doc.status,
+      priority: doc.priority,
+      activeTimer: this.resolveActiveTimerFromMongo(doc.status, doc.timers),
+    }));
+
+    return { orders: data, total };
+  }
   private async generateDisplayNumber(): Promise<string> {
     const last = await this.model
       .findOne({})
@@ -73,5 +113,33 @@ export class OrdersMongoRepository implements OrdersRepositoryPort {
     const next = last ? Number(last.display_number) + 1 : 1;
 
     return next.toString().padStart(4, '0');
+  }
+
+  private resolveActiveTimerFromMongo(
+    status: string,
+    timers?: Record<string, unknown>,
+  ): string | undefined {
+    if (!timers) return undefined;
+
+    const statusTimerMap: Record<string, string> = {
+      RECEIVED: 'placed_at',
+      CONFIRMED: 'confirmed_at',
+      PREPARING: 'preparing_at',
+      READY: 'ready_at',
+      PICKED_UP: 'picked_up_at',
+      DELIVERED: 'delivered_at',
+      CANCELLED: 'cancelled_at',
+    };
+
+    const key = statusTimerMap[status];
+    if (!key) return undefined;
+
+    const rawValue = timers[key];
+    if (!rawValue) return undefined;
+
+    const date =
+      rawValue instanceof Date ? rawValue : new Date(rawValue as string);
+
+    return isNaN(date.getTime()) ? undefined : date.toISOString();
   }
 }

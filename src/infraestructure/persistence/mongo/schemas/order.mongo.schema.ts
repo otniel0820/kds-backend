@@ -1,7 +1,8 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { HydratedDocument } from 'mongoose';
+import { HydratedDocument, Types } from 'mongoose';
 import { OrderStatus } from 'src/domain/orders';
 import { OrderPriority } from 'src/domain/orders/value-objects/order-priority.vo';
+import { PartnerMongoModel } from './partners.schema';
 
 export type OrderMongoDocument = HydratedDocument<OrderMongoModel> & {
   created_at: Date;
@@ -22,6 +23,12 @@ export class OrderMongoModel {
 
   @Prop({ required: true })
   external_id!: string;
+
+  @Prop({
+    type: Types.ObjectId,
+    ref: PartnerMongoModel.name,
+  })
+  partner?: Types.ObjectId;
 
   @Prop({ required: true })
   display_number!: string;
@@ -52,13 +59,25 @@ export class OrderMongoModel {
   notes?: string;
 
   @Prop({
-    type: [{ sku: String, name: String, qty: Number }],
+    type: [
+      {
+        product: {
+          type: Types.ObjectId,
+          ref: 'ProductMongoModel',
+          required: true,
+        },
+        qty: {
+          type: Number,
+          required: true,
+          min: 1,
+        },
+      },
+    ],
     default: [],
     _id: false,
   })
   items!: {
-    sku: string;
-    name: string;
+    product: Types.ObjectId;
     qty: number;
   }[];
 

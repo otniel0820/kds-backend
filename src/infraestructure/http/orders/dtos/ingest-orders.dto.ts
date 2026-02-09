@@ -12,8 +12,7 @@ export const IngestOrderDto = z.object({
   items: z
     .array(
       z.object({
-        sku: z.string().min(1),
-        name: z.string().min(1),
+        slug: z.string().min(1),
         qty: z.number().int().positive(),
       }),
     )

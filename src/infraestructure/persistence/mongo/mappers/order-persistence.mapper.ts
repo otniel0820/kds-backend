@@ -1,6 +1,7 @@
 import { OrderEntity } from 'src/domain/orders';
 import { OrderPriority } from 'src/domain/orders/value-objects';
 import { OrderMongoDocument } from '../schemas/order.mongo.schema';
+import { Types } from 'mongoose';
 
 export class OrderPersistenceMapper {
   static toPersistence(order: OrderEntity) {
@@ -9,6 +10,9 @@ export class OrderPersistenceMapper {
     return {
       source: p.source,
       external_id: p.externalId,
+
+      partner: p.partner ? new Types.ObjectId(p.partner) : undefined,
+
       display_number: p.displayNumber,
       priority: p.priority,
       customer_name: p.customerName,
@@ -17,7 +21,12 @@ export class OrderPersistenceMapper {
       courier_name: p.courierName,
       notes: p.notes,
       status: p.status,
-      items: p.items,
+
+      items: p.items.map((item) => ({
+        product: new Types.ObjectId(item.productId),
+        qty: item.qty,
+      })),
+
       timers: {
         placed_at: p.timers.placedAt,
         confirmed_at: p.timers.confirmedAt,
@@ -27,6 +36,7 @@ export class OrderPersistenceMapper {
         delivered_at: p.timers.deliveredAt,
         cancelled_at: p.timers.cancelledAt,
       },
+
       created_at: p.createdAt,
       updated_at: p.updatedAt,
     };
@@ -35,7 +45,10 @@ export class OrderPersistenceMapper {
   static toDomain(doc: OrderMongoDocument): OrderEntity {
     return new OrderEntity({
       id: String(doc._id),
+
       source: doc.source,
+      partner: doc.partner ? String(doc.partner) : undefined,
+
       externalId: doc.external_id,
       displayNumber: doc.display_number,
       priority: doc.priority ?? OrderPriority.NORMAL,
@@ -45,7 +58,12 @@ export class OrderPersistenceMapper {
       courierName: doc.courier_name,
       notes: doc.notes,
       status: doc.status,
-      items: doc.items ?? [],
+
+      items: (doc.items ?? []).map((item) => ({
+        productId: String(item.product),
+        qty: item.qty,
+      })),
+
       timers: {
         placedAt: doc.timers?.placed_at,
         confirmedAt: doc.timers?.confirmed_at,
@@ -55,6 +73,7 @@ export class OrderPersistenceMapper {
         deliveredAt: doc.timers?.delivered_at,
         cancelledAt: doc.timers?.cancelled_at,
       },
+
       createdAt: doc.created_at,
       updatedAt: doc.updated_at,
     });

@@ -3,11 +3,15 @@ import { OrderPriority } from '../value-objects/order-priority.vo';
 import { OrderTimers } from '../value-objects';
 import { assertOrderTransition, applyOrderTimer } from '../services';
 
-export type OrderItem = { sku: string; name: string; qty: number };
+export type OrderItem = {
+  productId: string;
+  qty: number;
+};
 
 export type OrderPrimitives = {
   id?: string;
   source: string;
+  partner?: string;
   externalId: string;
   displayNumber: string;
   priority: OrderPriority;
@@ -72,6 +76,7 @@ export class OrderEntity {
 
   static createFromIngest(input: {
     source: string;
+    partner?: string;
     externalId: string;
     priority?: OrderPriority;
     customerName?: string;
@@ -84,6 +89,7 @@ export class OrderEntity {
 
     return new OrderEntity({
       source: input.source,
+      partner: input.partner,
       externalId: input.externalId,
       displayNumber: OrderEntity.generateDisplayNumber(),
       priority: input.priority ?? OrderPriority.NORMAL,
