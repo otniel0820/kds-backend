@@ -1,6 +1,7 @@
 import { OrderEntity } from 'src/domain/orders';
 import { OrderStatus } from 'src/domain/orders';
 import { OrderDetailDto } from '../dtos/order-details.dto';
+import { OrderListDto } from '../dtos';
 
 export type OrderFilter = {
   id?: string;
@@ -21,4 +22,8 @@ export interface OrdersRepositoryPort {
   create(order: OrderEntity): Promise<OrderEntity>;
   update(order: OrderEntity): Promise<OrderEntity>;
   findDetailProjection(id: string): Promise<OrderDetailDto | null>;
+  findList(filter: OrderFilter): Promise<{
+    orders: OrderListDto[];
+    total: number;
+  }>;
 }

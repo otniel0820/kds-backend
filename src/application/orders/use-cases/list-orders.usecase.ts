@@ -3,32 +3,27 @@ import { OrdersRepositoryPort } from '../ports/order-repository.port';
 import { OrderListDto } from '../dtos';
 import { buildResponse } from 'src/common/builders/response.builder';
 import { IResponse } from 'src/common/schemas';
-import { resolveActiveTimer } from 'src/common/helpers';
 
 export class ListOrdersUseCase {
   constructor(private readonly repo: OrdersRepositoryPort) {}
 
   async execute(filter?: {
+    id?: string;
+    source?: string;
+    externalId?: string;
     status?: OrderStatus[];
-  }): Promise<IResponse<OrderListDto[]>> {
-    const orders = await this.repo.findByFilter({
+    limit?: number;
+    skip?: number;
+  }): Promise<IResponse<{ orders: OrderListDto[]; total: number }>> {
+    const result = await this.repo.findList({
+      id: filter?.id,
+      source: filter?.source,
+      externalId: filter?.externalId,
       status: filter?.status,
+      limit: filter?.limit,
+      skip: filter?.skip,
     });
 
-    return buildResponse(
-      'KDS_ORD_R0003',
-      orders.map((order) => {
-        const p = order.toPrimitives();
-
-        return {
-          id: p.id!,
-          source: p.source,
-          displayNumber: p.displayNumber,
-          status: p.status,
-          priority: p.priority,
-          activeTimer: resolveActiveTimer(p),
-        };
-      }),
-    );
+    return buildResponse('KDS_ORD_R0003', result);
   }
 }

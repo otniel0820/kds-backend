@@ -3,7 +3,8 @@ import { OrderPriority } from 'src/domain/orders/value-objects';
 
 export type OrderListDto = {
   id: string;
-  source: string;
+  partnerName?: string;
+  partnerImage?: string;
   displayNumber: string;
   status: OrderStatus;
   priority: OrderPriority;

@@ -6,8 +6,11 @@ export type OrderDetailDto = {
   courierName?: string;
 
   items: {
-    sku: string;
+    id: string;
     name: string;
+    image: string;
+    price: number;
+    currency: string;
     qty: number;
   }[];
 };

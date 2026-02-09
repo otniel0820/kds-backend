@@ -9,7 +9,6 @@ export class GetOrderDetailUseCase {
 
   async execute(id: string): Promise<IResponse<OrderDetailDto>> {
     const detail = await this.repo.findDetailProjection(id);
-
     if (!detail) {
       throw new Error('ORDER_NOT_FOUND');
     }
