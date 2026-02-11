@@ -8,6 +8,7 @@ export type OrderListLeanDoc = {
   status: OrderStatus;
   priority: OrderPriority;
   timers: Record<string, Date | undefined>;
+  courier_name?: string;
   partner?: {
     name: string;
     image: string;

@@ -1,10 +1,11 @@
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { ProductsRepositoryPort } from 'src/application/orders/ports/products-repository.port';
+
 import {
   ProductMongoModel,
   ProductMongoDocument,
 } from '../schemas/products.schema';
+import { ProductsRepositoryPort } from 'src/application/orders/ports/products-repository.port';
 
 export class ProductsMongoRepository implements ProductsRepositoryPort {
   constructor(

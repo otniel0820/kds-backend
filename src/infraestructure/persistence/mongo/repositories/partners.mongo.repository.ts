@@ -6,8 +6,8 @@ import {
   PartnerMongoDocument,
 } from '../schemas/partners.schema';
 import {
-  PartnerLookup,
   PartnersRepositoryPort,
+  PartnerLookup,
 } from 'src/application/orders/ports/partners-repository.port';
 
 export class PartnersMongoRepository implements PartnersRepositoryPort {

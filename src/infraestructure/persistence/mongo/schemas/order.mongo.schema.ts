@@ -92,6 +92,7 @@ export class OrderMongoModel {
       cancelled_at: { type: Date },
     },
     default: {},
+    _id: false,
   })
   timers!: {
     placed_at?: Date;

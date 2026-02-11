@@ -1,6 +1,6 @@
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { OrdersRepositoryPort, OrderFilter } from 'src/application/orders';
+
 import { OrderEntity } from 'src/domain/orders';
 import {
   OrderMongoModel,
@@ -8,9 +8,11 @@ import {
 } from '../schemas/order.mongo.schema';
 import { buildOrderDetailPipeline } from '../piplines';
 import { OrderPersistenceMapper } from '../mappers';
-import { OrderDetailDto } from 'src/application/orders/dtos/order-details.dto';
+
 import { OrderListLeanDoc } from '../types';
+import { OrdersRepositoryPort, OrderFilter } from 'src/application/orders';
 import { OrderListDto } from 'src/application/orders/dtos';
+import { OrderDetailDto } from 'src/application/orders/dtos/order-details.dto';
 
 export class OrdersMongoRepository implements OrdersRepositoryPort {
   constructor(
@@ -28,7 +30,7 @@ export class OrdersMongoRepository implements OrdersRepositoryPort {
 
     if (filter.id) q._id = filter.id;
     if (filter.source) q.source = filter.source;
-    if (filter.externalId) q.externalId = filter.externalId;
+    if (filter.externalId) q.external_id = filter.externalId;
     if (filter.status?.length) q.status = { $in: filter.status };
 
     const docs = await this.model.find(q).exec();
@@ -67,12 +69,26 @@ export class OrdersMongoRepository implements OrdersRepositoryPort {
   async findList(
     filter: OrderFilter,
   ): Promise<{ orders: OrderListDto[]; total: number }> {
-    const q: Record<string, unknown> = {};
+    const q: Record<string, any> = {};
 
     if (filter.id) q._id = filter.id;
     if (filter.source) q.source = filter.source;
     if (filter.externalId) q.external_id = filter.externalId;
-    if (filter.status?.length) q.status = { $in: filter.status };
+
+    if (filter.status?.length) {
+      q.status = { $in: filter.status };
+    }
+    if (filter.createdFrom || filter.createdTo) {
+      q.created_at = {};
+
+      if (filter.createdFrom) {
+        q.created_at.$gte = filter.createdFrom;
+      }
+
+      if (filter.createdTo) {
+        q.created_at.$lte = filter.createdTo;
+      }
+    }
 
     const limit = filter.limit ?? 20;
     const skip = filter.skip ?? 0;
@@ -99,9 +115,31 @@ export class OrdersMongoRepository implements OrdersRepositoryPort {
       status: doc.status,
       priority: doc.priority,
       activeTimer: this.resolveActiveTimerFromMongo(doc.status, doc.timers),
+      courierName: doc.courier_name ?? undefined,
     }));
 
     return { orders: data, total };
+  }
+  async findItemUpdateById(id: string): Promise<OrderListDto> {
+    const doc = await this.model
+      .findById(id)
+      .populate<{ partner?: { name: string; image: string } }>({
+        path: 'partner',
+        select: 'name image',
+      })
+      .lean()
+      .exec();
+
+    return {
+      id: doc!._id.toString(),
+      partnerName: doc!.partner?.name,
+      partnerImage: doc!.partner?.image,
+      displayNumber: doc!.display_number,
+      status: doc!.status,
+      priority: doc!.priority,
+      activeTimer: this.resolveActiveTimerFromMongo(doc!.status, doc!.timers),
+      courierName: doc!.courier_name ?? undefined,
+    };
   }
   private async generateDisplayNumber(): Promise<string> {
     const last = await this.model

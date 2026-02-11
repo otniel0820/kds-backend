@@ -60,7 +60,6 @@ export const buildOrderDetailPipeline = (id: string): PipelineStage[] => [
       },
     },
   },
-
   {
     $project: {
       _id: 0,
