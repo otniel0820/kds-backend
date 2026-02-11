@@ -18,6 +18,7 @@ import {
   PRODUCTS_REPOSITORY,
 } from 'src/application/orders/ports/products-repository.port';
 import { GetOrderDetailUseCase } from 'src/application/orders/use-cases/order-details.usecase';
+import { UpdateOrderStatusByExternalIdUseCase } from 'src/application/orders/use-cases/update-order-status-by-external-id.usecase';
 
 export const useCaseProviders = [
   {
@@ -53,5 +54,14 @@ export const useCaseProviders = [
     useFactory: (repo: OrdersRepositoryPort): GetOrderDetailUseCase =>
       new GetOrderDetailUseCase(repo),
     inject: [ORDERS_REPOSITORY],
+  },
+  {
+    provide: UpdateOrderStatusByExternalIdUseCase,
+    useFactory: (
+      repo: OrdersRepositoryPort,
+      events: OrderEventsPort,
+    ): UpdateOrderStatusByExternalIdUseCase =>
+      new UpdateOrderStatusByExternalIdUseCase(repo, events),
+    inject: [ORDERS_REPOSITORY, ORDER_EVENTS_PORT],
   },
 ];
