@@ -34,11 +34,11 @@ export class OrderEntity {
     this.props = props;
   }
 
-  get id() {
+  get id(): string | undefined {
     return this.props.id;
   }
 
-  get status() {
+  get status(): string | undefined {
     return this.props.status;
   }
 
@@ -61,7 +61,7 @@ export class OrderEntity {
     const updatedTimers = applyOrderTimer(this.props.timers, next, now);
     let courierName = this.props.courierName;
 
-    if (next === OrderStatus.PICKED_UP && !courierName) {
+    if (next === OrderStatus.READY && !courierName) {
       courierName = this.generateCourierName();
     }
 
@@ -74,6 +74,15 @@ export class OrderEntity {
     });
   }
 
+  updateStatus(next: OrderStatus): void {
+    const current = this.props.status;
+
+    if (current === next) return;
+
+    assertOrderTransition(current, next);
+
+    this.props.status = next;
+  }
   static createFromIngest(input: {
     source: string;
     partner?: string;
