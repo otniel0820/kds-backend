@@ -1,6 +1,7 @@
 import { WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
 import { Server } from 'socket.io';
 import { OrderListDto } from 'src/application/orders/dtos';
+
 import { variables } from 'src/config';
 
 @WebSocketGateway({
@@ -18,5 +19,8 @@ export class OrdersGateway {
 
   emitOrderCreated(payload: OrderListDto): void {
     this.server.emit('order.created', payload);
+  }
+  emitOrderStatusUpdated(payload: OrderListDto): void {
+    this.server.emit('order.status.updated', payload);
   }
 }
