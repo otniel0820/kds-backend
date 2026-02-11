@@ -1,6 +1,5 @@
 import { OrdersRepositoryPort } from '../ports/order-repository.port';
 import { OrderEventsPort } from '../ports/order-events.port';
-import { resolveActiveTimer } from 'src/common/helpers';
 import {
   PartnerLookup,
   PartnersRepositoryPort,
@@ -10,6 +9,7 @@ import { IngestOrderInput } from '../contracts/input/ingest-orders.input';
 import { OrderSummary } from '../contracts/output/order-symary.output';
 import { OrderEntity } from '../../domain';
 import { OrderPriority } from '../../domain/value-objects';
+import { resolveActiveTimer } from 'src/common/helpers/resolve-active-timer.helper';
 
 export class IngestOrderUseCase {
   constructor(

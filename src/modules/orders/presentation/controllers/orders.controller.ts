@@ -29,8 +29,15 @@ import {
   ListOrdersUseCase,
   UpdateOrderStatusUseCase,
 } from '../../application';
-import { GetOrderDetailUseCase } from '../../application/use-cases/order-details.usecase';
+import { GetOrderDetailUseCase } from '../../application/use-cases/get-order-detail.usecase';
 import { UpdateOrderStatusByExternalIdUseCase } from '../../application/use-cases/update-order-status-by-external-id.usecase';
+import {
+  ApiGetOrderDetailDecorator,
+  ApiGetOrdersDecorator,
+  ApiIngestOrderDecorator,
+  ApiUpdateOrderStatusDecorator,
+  ApiUpdateOrderWebhookDecorator,
+} from '../swagger/order/decorators';
 
 @Controller()
 export class OrdersController {
@@ -43,11 +50,13 @@ export class OrdersController {
   ) {}
 
   @Get(buildEndpoint('GET_ORDER_LIST_V1').fullPath)
+  @ApiGetOrdersDecorator()
   getOrders(@Query(new ZodValidationPipe(GetOrdersDto)) query: IGetOrdersDto) {
     return this.listOrders.execute(query);
   }
 
   @UseGuards(ValidateCredentialsGuard)
+  @ApiIngestOrderDecorator()
   @Post(buildEndpoint('INGEST_ORDER_V1').fullPath)
   @HttpCode(204)
   async ingest(
@@ -56,6 +65,7 @@ export class OrdersController {
     await this.ingestOrder.execute(body);
   }
 
+  @ApiUpdateOrderStatusDecorator()
   @Patch(buildEndpoint('UPDATE_ORDER_STATUS_V1').fullPath)
   update(
     @Param('id') id: string,
@@ -68,12 +78,14 @@ export class OrdersController {
     });
   }
 
+  @ApiGetOrderDetailDecorator()
   @Get(buildEndpoint('GET_ORDER_DETAIL_V1').fullPath)
   getDetail(@Param('id') id: string) {
     return this.getOrderDetail.execute(id);
   }
 
   @UseGuards(ValidateCredentialsGuard)
+  @ApiUpdateOrderWebhookDecorator()
   @Post(buildEndpoint('UPDATE_ORDER_WEBHOOK_V1').fullPath)
   @HttpCode(204)
   async updateOrderFromWebhook(
