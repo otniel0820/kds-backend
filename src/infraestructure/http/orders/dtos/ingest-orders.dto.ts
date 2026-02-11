@@ -1,14 +1,14 @@
 import { z } from 'zod';
-import { OrderPriority } from 'src/domain/orders/value-objects/order-priority.vo';
+import { ORDER_PRIORITY_VALUES } from '../constants/order-http.constants';
 
 export const IngestOrderDto = z.object({
   source: z.string().min(1),
   externalId: z.string().min(1),
-  customerName: z.string().min(1).optional(),
-  customerPhone: z.string().min(1).optional(),
-  deliveryAddress: z.string().min(1).optional(),
+  customerName: z.string().min(1),
+  customerPhone: z.string().min(1),
+  deliveryAddress: z.string().min(1),
   notes: z.string().min(1).optional(),
-  priority: z.nativeEnum(OrderPriority).optional(),
+  priority: z.enum(ORDER_PRIORITY_VALUES).optional(),
   items: z
     .array(
       z.object({

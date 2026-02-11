@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { OrderStatus } from 'src/domain/orders';
+import { ORDER_STATUS_VALUES } from '../constants/order-http.constants';
 
 const toStringArray = (v: unknown) => {
   if (typeof v === 'string') {
@@ -21,7 +21,7 @@ export const GetOrdersDto = z
     source: z.string().optional(),
 
     status: z
-      .preprocess(toStringArray, z.array(z.nativeEnum(OrderStatus)))
+      .preprocess(toStringArray, z.array(z.enum(ORDER_STATUS_VALUES)))
       .optional(),
 
     createdFrom: z.coerce.date().optional(),
