@@ -1,6 +1,5 @@
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-
 import { OrderEntity } from 'src/domain/orders';
 import {
   OrderMongoModel,
@@ -8,11 +7,11 @@ import {
 } from '../schemas/order.mongo.schema';
 import { buildOrderDetailPipeline } from '../piplines';
 import { OrderPersistenceMapper } from '../mappers';
-
 import { OrderListLeanDoc } from '../types';
 import { OrdersRepositoryPort, OrderFilter } from 'src/application/orders';
-import { OrderListDto } from 'src/application/orders/dtos';
-import { OrderDetailDto } from 'src/application/orders/dtos/order-details.dto';
+import { OrderDetailOutput } from 'src/application/orders/contracts/output/order-detail.output';
+import { OrderSummary } from 'src/application/orders/contracts/output/order-symary.output';
+import { OrderSummaryMapper } from '../mappers/order-sumary.mapper';
 
 export class OrdersMongoRepository implements OrdersRepositoryPort {
   constructor(
@@ -26,23 +25,19 @@ export class OrdersMongoRepository implements OrdersRepositoryPort {
   }
 
   async findByFilter(filter: OrderFilter): Promise<OrderEntity[]> {
-    const q: Record<string, unknown> = {};
+    const query = this.buildMongoQuery(filter);
 
-    if (filter.id) q._id = filter.id;
-    if (filter.source) q.source = filter.source;
-    if (filter.externalId) q.external_id = filter.externalId;
-    if (filter.status?.length) q.status = { $in: filter.status };
+    const docs = await this.model.find(query).exec();
 
-    const docs = await this.model.find(q).exec();
-    return docs.map((d) => OrderPersistenceMapper.toDomain(d));
+    return docs.map((doc) => OrderPersistenceMapper.toDomain(doc));
   }
 
   async create(order: OrderEntity): Promise<OrderEntity> {
     const displayNumber = await this.generateDisplayNumber();
 
-    const persistence = OrderPersistenceMapper.toPersistence(
-      order.withDisplayNumber(displayNumber),
-    );
+    order.updateDisplayNumber(displayNumber);
+
+    const persistence = OrderPersistenceMapper.toPersistence(order);
 
     const doc = await this.model.create(persistence);
 
@@ -56,45 +51,31 @@ export class OrdersMongoRepository implements OrdersRepositoryPort {
       .findByIdAndUpdate(order.id, { $set: persistence }, { new: true })
       .exec();
 
-    return OrderPersistenceMapper.toDomain(doc!);
+    if (!doc) {
+      throw new Error(`Order not found: ${order.id}`);
+    }
+
+    return OrderPersistenceMapper.toDomain(doc);
   }
 
-  async findDetailProjection(id: string) {
-    const result = await this.model.aggregate<OrderDetailDto>(
+  async findDetailProjection(id: string): Promise<OrderDetailOutput | null> {
+    const result = await this.model.aggregate<OrderDetailOutput>(
       buildOrderDetailPipeline(id),
     );
-    return result[0] ?? null;
+
+    return result.length > 0 ? result[0] : null;
   }
 
   async findList(
     filter: OrderFilter,
-  ): Promise<{ orders: OrderListDto[]; total: number }> {
-    const q: Record<string, any> = {};
-
-    if (filter.id) q._id = filter.id;
-    if (filter.source) q.source = filter.source;
-    if (filter.externalId) q.external_id = filter.externalId;
-
-    if (filter.status?.length) {
-      q.status = { $in: filter.status };
-    }
-    if (filter.createdFrom || filter.createdTo) {
-      q.created_at = {};
-
-      if (filter.createdFrom) {
-        q.created_at.$gte = filter.createdFrom;
-      }
-
-      if (filter.createdTo) {
-        q.created_at.$lte = filter.createdTo;
-      }
-    }
+  ): Promise<{ orders: OrderSummary[]; total: number }> {
+    const query = this.buildMongoQuery(filter);
 
     const limit = filter.limit ?? 20;
     const skip = filter.skip ?? 0;
 
-    const docs = (await this.model
-      .find(q)
+    const docs = await this.model
+      .find(query)
       .populate<{ partner?: { name: string; image: string } }>({
         path: 'partner',
         select: 'name image',
@@ -103,24 +84,18 @@ export class OrdersMongoRepository implements OrdersRepositoryPort {
       .skip(skip)
       .limit(limit)
       .lean()
-      .exec()) as OrderListLeanDoc[];
+      .exec();
 
-    const total = await this.model.countDocuments(q);
+    const total = await this.model.countDocuments(query);
 
-    const data: OrderListDto[] = docs.map((doc) => ({
-      id: doc._id.toString(),
-      partnerName: doc.partner?.name,
-      partnerImage: doc.partner?.image,
-      displayNumber: doc.display_number,
-      status: doc.status,
-      priority: doc.priority,
-      activeTimer: this.resolveActiveTimerFromMongo(doc.status, doc.timers),
-      courierName: doc.courier_name ?? undefined,
-    }));
+    const orders = docs.map((doc) =>
+      OrderSummaryMapper.fromMongo(doc as OrderListLeanDoc),
+    );
 
-    return { orders: data, total };
+    return { orders, total };
   }
-  async findItemUpdateById(id: string): Promise<OrderListDto> {
+
+  async findItemUpdateById(id: string): Promise<OrderSummary> {
     const doc = await this.model
       .findById(id)
       .populate<{ partner?: { name: string; image: string } }>({
@@ -130,15 +105,35 @@ export class OrdersMongoRepository implements OrdersRepositoryPort {
       .lean()
       .exec();
 
+    if (!doc) {
+      throw new Error(`Order not found: ${id}`);
+    }
+
+    return OrderSummaryMapper.fromMongo(doc as OrderListLeanDoc);
+  }
+
+  private buildMongoQuery(filter: OrderFilter): Record<string, unknown> {
+    const query: Record<string, unknown> = {};
+
+    Object.assign(query, {
+      ...(filter.id && { _id: filter.id }),
+      ...(filter.source && { source: filter.source }),
+      ...(filter.externalId && { external_id: filter.externalId }),
+      ...(filter.status?.length && { status: { $in: filter.status } }),
+      ...this.buildCreatedAt(filter),
+    });
+
+    return query;
+  }
+
+  private buildCreatedAt(filter: OrderFilter): Record<string, unknown> {
+    if (!filter.createdFrom && !filter.createdTo) return {};
+
     return {
-      id: doc!._id.toString(),
-      partnerName: doc!.partner?.name,
-      partnerImage: doc!.partner?.image,
-      displayNumber: doc!.display_number,
-      status: doc!.status,
-      priority: doc!.priority,
-      activeTimer: this.resolveActiveTimerFromMongo(doc!.status, doc!.timers),
-      courierName: doc!.courier_name ?? undefined,
+      created_at: {
+        ...(filter.createdFrom && { $gte: filter.createdFrom }),
+        ...(filter.createdTo && { $lte: filter.createdTo }),
+      },
     };
   }
   private async generateDisplayNumber(): Promise<string> {
@@ -151,33 +146,5 @@ export class OrdersMongoRepository implements OrdersRepositoryPort {
     const next = last ? Number(last.display_number) + 1 : 1;
 
     return next.toString().padStart(4, '0');
-  }
-
-  private resolveActiveTimerFromMongo(
-    status: string,
-    timers?: Record<string, unknown>,
-  ): string | undefined {
-    if (!timers) return undefined;
-
-    const statusTimerMap: Record<string, string> = {
-      RECEIVED: 'placed_at',
-      CONFIRMED: 'confirmed_at',
-      PREPARING: 'preparing_at',
-      READY: 'ready_at',
-      PICKED_UP: 'picked_up_at',
-      DELIVERED: 'delivered_at',
-      CANCELLED: 'cancelled_at',
-    };
-
-    const key = statusTimerMap[status];
-    if (!key) return undefined;
-
-    const rawValue = timers[key];
-    if (!rawValue) return undefined;
-
-    const date =
-      rawValue instanceof Date ? rawValue : new Date(rawValue as string);
-
-    return isNaN(date.getTime()) ? undefined : date.toISOString();
   }
 }

@@ -1,7 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Types } from 'mongoose';
-import { OrderStatus } from 'src/domain/orders';
-import { OrderPriority } from 'src/domain/orders/value-objects/order-priority.vo';
+import type { OrderStatusValue } from 'src/domain/orders/value-objects/order-status.vo';
+import type { OrderPriorityValue } from 'src/domain/orders/value-objects/order-priority.vo';
 import { PartnerMongoModel } from './partners.schema';
 
 export type OrderMongoDocument = HydratedDocument<OrderMongoModel> & {
@@ -33,15 +33,28 @@ export class OrderMongoModel {
   @Prop({ required: true })
   display_number!: string;
 
-  @Prop({ required: true, enum: OrderStatus })
-  status!: OrderStatus;
+  @Prop({
+    required: true,
+    type: String,
+    enum: [
+      'RECEIVED',
+      'CONFIRMED',
+      'PREPARING',
+      'READY',
+      'PICKED_UP',
+      'DELIVERED',
+      'CANCELLED',
+    ],
+  })
+  status!: OrderStatusValue;
 
   @Prop({
     required: true,
-    enum: OrderPriority,
-    default: OrderPriority.NORMAL,
+    type: String,
+    enum: ['NORMAL', 'HIGH'],
+    default: 'NORMAL',
   })
-  priority!: OrderPriority;
+  priority!: OrderPriorityValue;
 
   @Prop({ required: false })
   customer_name?: string;

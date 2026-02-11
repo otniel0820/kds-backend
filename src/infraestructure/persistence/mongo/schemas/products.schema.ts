@@ -1,6 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument } from 'mongoose';
-import { ProductType } from 'src/domain/orders/value-objects/product-type.vo';
+import type { ProductTypeValue } from 'src/domain/orders/value-objects/product-type.vo';
 
 export type ProductMongoDocument = HydratedDocument<ProductMongoModel> & {
   created_at: Date;
@@ -33,9 +33,10 @@ export class ProductMongoModel {
 
   @Prop({
     required: true,
-    enum: ProductType,
+    type: String,
+    enum: ['COMBO', 'SIDE', 'DRINK', 'DESSERT', 'SAUCE'], // 👈 array literal
   })
-  type!: ProductType;
+  type!: ProductTypeValue;
 
   @Prop({ default: true })
   is_active!: boolean;

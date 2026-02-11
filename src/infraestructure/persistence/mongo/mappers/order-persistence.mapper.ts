@@ -1,5 +1,9 @@
 import { OrderEntity } from 'src/domain/orders';
-import { OrderPriority } from 'src/domain/orders/value-objects';
+import {
+  OrderPriority,
+  OrderStatus,
+  OrderTimers,
+} from 'src/domain/orders/value-objects';
 import { OrderMongoDocument } from '../schemas/order.mongo.schema';
 import { Types } from 'mongoose';
 
@@ -51,20 +55,20 @@ export class OrderPersistenceMapper {
 
       externalId: doc.external_id,
       displayNumber: doc.display_number,
-      priority: doc.priority ?? OrderPriority.NORMAL,
+      priority: OrderPriority.from(doc.priority ?? 'NORMAL'),
       customerName: doc.customer_name,
       customerPhone: doc.customer_phone,
       deliveryAddress: doc.delivery_address,
       courierName: doc.courier_name,
       notes: doc.notes,
-      status: doc.status,
+      status: OrderStatus.from(doc.status),
 
       items: (doc.items ?? []).map((item) => ({
         productId: String(item.product),
         qty: item.qty,
       })),
 
-      timers: {
+      timers: new OrderTimers({
         placedAt: doc.timers?.placed_at,
         confirmedAt: doc.timers?.confirmed_at,
         preparingAt: doc.timers?.preparing_at,
@@ -72,7 +76,7 @@ export class OrderPersistenceMapper {
         pickedUpAt: doc.timers?.picked_up_at,
         deliveredAt: doc.timers?.delivered_at,
         cancelledAt: doc.timers?.cancelled_at,
-      },
+      }),
 
       createdAt: doc.created_at,
       updatedAt: doc.updated_at,
