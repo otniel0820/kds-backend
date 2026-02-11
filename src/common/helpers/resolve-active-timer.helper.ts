@@ -1,4 +1,4 @@
-import { OrderEntity } from 'src/domain/orders';
+import { OrderEntity } from 'src/modules/orders/domain';
 
 type OrderPrimitives = ReturnType<typeof OrderEntity.prototype.toPrimitives>;
 
