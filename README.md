@@ -1,249 +1,232 @@
-# 🧾 KDS Orders Service – Backend
+# Backend KSD Product Challenge
 
-## 📌 Descripción de la solución
+Backend desarrollado con **NestJS** siguiendo principios de **Clean Architecture**, **Hexagonal Architecture (Ports & Adapters)** y **Domain-Driven Design (DDD)**.
 
-Este proyecto es un servicio backend para la gestión de órdenes (Orders Service), diseñado bajo principios de **Clean Architecture** y desacoplado del framework.
-
-El sistema permite:
-
-- Ingestar órdenes externas (webhook protegido con Basic Auth)
-- Listar órdenes con filtros por estado
-- Obtener detalle de una orden (proyección optimizada)
-- Actualizar el estado de una orden con control de transiciones válidas
-
-El servicio implementa:
-
-- Arquitectura hexagonal (Ports & Adapters)
-- Casos de uso desacoplados de NestJS
-- Validación con Zod
-- Sistema de errores centralizado
-- Swagger documentado manualmente con DTOs explícitos
-- Guards desacoplados del dominio
-- Filtro global de errores con mapeo por reglas
+La solución está implementada como un **Monolito Modular orientado a features**, donde cada módulo encapsula completamente su dominio, casos de uso, infraestructura y capa de presentación.
 
 ---
 
-# 🏗 Arquitectura
+## 📚 Documentación API
 
-El proyecto sigue una estructura basada en capas:
+La documentación interactiva está disponible vía Swagger en:
+
+👉 http://localhost:3000/docs
+
+Incluye:
+
+- Esquemas completos de request y response
+- Modelado de errores tipados
+- Autenticación BasicAuth documentada
+- Contratos desacoplados del framework
+
+---
+
+## 🏗 Arquitectura
+
+El sistema está organizado por módulos funcionales siguiendo separación estricta de responsabilidades.
+
+### Estructura del módulo `orders`
+
 ```bash
-src/
-├── application/ → Casos de uso
-├── domain/ → Entidades y lógica de negocio
-├── infrastructure/ → HTTP, repositorios, adaptadores
-├── common/ → Builders, schemas, errores, guards
-├── config/ → Configuración (env, swagger)
+modules/orders
+├── application
+│ ├── use-cases
+│ ├── ports
+│ └── contracts
+├── domain
+│ ├── entities
+│ ├── value-objects
+│ └── services
+├── infrastructure
+│ └── mongo
+│ ├── repositories
+│ ├── schemas
+│ └── mappers
+└── presentation
+├── controllers
+├── dtos
+├── swagger
+└── websocket
 ```
-## Principios aplicados
-
-- El dominio no conoce NestJS.
-- La aplicación no lanza excepciones HTTP.
-- Los errores se transforman en el filtro global.
-- Los controladores solo orquestan.
-- Swagger no contamina la lógica de negocio.
-- Las respuestas siguen un contrato uniforme (`IResponse<T>`).
 
 ---
 
-# 🚀 Instrucciones para ejecutar el proyecto
+## 🔎 Capas y responsabilidades
 
-## 1️⃣ Instalar dependencias
+### Domain
+
+- Entidades
+- Value Objects
+- Servicios de dominio
+- Reglas de negocio puras
+- Sin dependencias de frameworks
+
+### Application
+
+- Casos de uso
+- Orquestación de reglas
+- Definición de puertos (interfaces)
+- Independiente de infraestructura concreta
+
+### Infrastructure
+
+- Implementaciones técnicas
+- MongoDB + Mongoose
+- Adaptadores de repositorios
+- Mapeo persistencia ↔ dominio
+
+### Presentation
+
+- Controllers HTTP
+- DTOs
+- Documentación Swagger
+- Gateway WebSocket
+
+---
+
+## 🧠 Principios aplicados
+
+- Separación estricta de dependencias
+- Inversión de dependencias mediante puertos
+- Encapsulamiento por módulo (bounded context)
+- Mapeo explícito entre modelos de persistencia y dominio
+- DTOs desacoplados del dominio
+- Documentación OpenAPI desacoplada de controllers
+- Preparado para migración a microservicios
+
+---
+
+## 🚀 Ejecución del proyecto
+
+### 1️⃣ Clonar repositorio
+
+```bash
+git clone <repository-url>
+cd backend-ksd-product-challenge
+```
+
+### 2️⃣ Instalar dependencias
+
 ```bash
 pnpm install
 ```
-## 2️⃣ Variables de entorno
 
-Crear un archivo .env:
+### 3️⃣ Configurar variables de entorno
+
+Crear archivo .env basado en .env.template:
+
 ```bash
-PORT=3000
-NEST_NODE_ENV=DEVELOPMENT
-NEST_MONGO_URL=UrlDeBD
-NEST_USER_NAME_GLOVO=your_user
-NEST_PASSWORD_GLOVO=your_password
+NEST_MONGO_URL=mongodb://localhost:27017
 ```
-## 3️⃣ Ejecutar en desarrollo
+
+### 4️⃣ Ejecutar en modo desarrollo
+
 ```bash
 pnpm run start:dev
 ```
 
-## 5️⃣ Swagger
+La aplicación estará disponible en:
 
-Disponible en:
+```bash
+http://localhost:3000
+```
+
+O el puerto de su eleccion
+
+## Documentación Swagger:
+
 ```bash
 http://localhost:3000/docs
 ```
 
-## 🔐 Seguridad
+## 🧪 Testing
 
-El endpoint de ingesta de órdenes está protegido mediante:
-
-Basic Authentication
-Comparación segura con timingSafeEqual
-Guard independiente del dominio
-Manejo centralizado de errores de autenticación
-
-## 📦 Endpoints
-
-🔹 Ingest Order
-POST /orders
-Protegido con Basic Auth
-Valida DTO con Zod
-Retorna IResponse<OrderDto>
-
-🔹 List Orders
-GET /orders
-Filtro opcional por status
-Retorna IResponse<OrderListDTO[]>
-
-🔹 Get Order Detail
-GET /orders/:id
-Retorna proyección optimizada
-Error 404 si no existe
-
-🔹 Update Order Status
-PATCH /orders/:id
-Valida transición de estado
-409 si transición inválida
-404 si no existe
-400 si DTO inválido
-
-## 📐 Contrato de Respuesta
-
-Todas las respuestas exitosas siguen el formato:
 ```bash
-{
-  "status": number,
-  "code": "string",
-  "message": "string",
-  "data": {}
-}
+npm run test
 ```
 
-En el caso de actualizaciones sin contenido:
+## 🗄 Base de datos
+
+MongoDB
+
+Mongoose como ODM
+
+Las entidades de dominio no dependen del esquema Mongo.
+
+El mapeo se realiza explícitamente en los repositorios.
+
+Esto permite cambiar el motor de persistencia sin afectar el dominio.
+
+## 🔌 WebSocket
+
+El módulo orders expone eventos mediante un Gateway WebSocket desacoplado a través del puerto:
+
 ```bash
-{
-  "status": 200,
-  "code": "KDS-ORD-R0004",
-  "message": "Order status updated successfully"
-}
+OrderEventsPort
 ```
 
-❌ Contrato de Error
+Esto permite:
 
-Todos los errores siguen el formato:
+- Sustituir WebSocket por otro mecanismo
+
+- Migrar a un broker (Kafka / RabbitMQ)
+
+- Mantener el dominio independiente de la tecnología de comunicación
+
+## 📌 Decisiones técnicas relevantes
+
+### 1️⃣ Arquitectura modular por feature
+
+Se priorizó la organización por módulo funcional en lugar de una estructura global por capas con el objetivo de:
+
+- Reducir el acoplamiento transversal
+- Mejorar la mantenibilidad
+- Permitir escalabilidad de equipos
+- Facilitar una futura extracción como microservicio
+
+
+### 2️⃣ Clean Architecture + Hexagonal
+
+Se implementaron puertos y adaptadores para:
+
+- Aislar el dominio de la infraestructura
+- Permitir reemplazar MongoDB sin impacto en los casos de uso
+- Encapsular WebSocket como adaptador externo
+
+
+### 3️⃣ Uso de Value Objects
+
+Los estados y prioridades de las órdenes se modelan como Value Objects dentro del dominio para:
+
+- Garantizar invariantes
+- Centralizar validaciones
+- Evitar lógica distribuida
+
+## 4️⃣ Inyección mediante tokens simbólicos
+
+Se utilizan tokens explícitos:
+
 ```bash
-{
-  "status": number,
-  "code": "string",
-  "message": "string",
-  "details": {},
-  "timestamp": "ISO date"
-}
+export const ORDERS_REPOSITORY = Symbol('ORDERS_REPOSITORY');
 ```
+---
 
-Ejemplo (409):
-```bash
-{
-  "status": 409,
-  "code": "KDS-ORDER-E0002",
-  "message": "Invalid order status transition",
-  "details": {
-    "displayMessage": {
-      "ref": "140219-020103-050002",
-      "en": "Invalid order status transition",
-      "es": "Transición de estado de pedido no válida"
-    },
-    "reason": "Invalid transition from CONFIRMED to PICKED_UP"
-  },
-  "timestamp": "2026-02-07T21:15:37.014Z"
-}
-```
+## 📈 Posibles mejoras
 
-# ⚙️ Decisiones técnicas relevantes
+- Implementar CQRS formal (separación de Commands y Queries)
+- Introducir Domain Events con un Event Bus interno
+- Agregar pruebas de integración
+- Incorporar Docker Compose para un entorno reproducible
+- Implementar observabilidad (logs estructurados, tracing)
+- Añadir rate limiting y métricas
 
-## 1️⃣ Clean Architecture/Arquitectura Hexagonal
-- El dominio y los casos de uso están desacoplados de:
- - NestJS
- - Swagger
- - Infraestructura HTTP
+---
 
-Permite:
-- Testear lógica sin framework
-- Reemplazar adaptadores
-- Mantener el dominio puro
+## 📦 Escalabilidad futura
 
-## 2️⃣ Validación con Zod
+La arquitectura permite:
 
-#### Se eligió Zod porque:
-- Mejor inferencia de tipos
-- Validación declarativa
-- Control explícito de errores
-- Integración limpia con pipes personalizados
-
-## 3️⃣ Sistema propio de respuestas y errores
-
-#### Se implementó:
-- buildResponse
-- buildError
-- Diccionarios centralizados
-- Resolución por reglas en el filtro global
-
-#### Ventajas:
-- Uniformidad en respuestas
-- Independencia del framework
-- Preparado para internacionalización
-- Códigos estandarizados
-
-## 4️⃣ Swagger desacoplado
-
-#### La documentación:
-- Usa DTOs exclusivos para Swagger
-- No contamina DTOs de negocio
-- Refleja exactamente el contrato runtime
-
-## 5️⃣ Control de transiciones de estado
-
-- Las reglas de transición están en el dominio.
-- Si una transición es inválida:
-  - Se lanza error de dominio
-  - El filtro global lo transforma en 409
-
-# 🔍 Posibles mejoras
-
-## 1️⃣ Tests automatizados
-
-- Unit tests para casos de uso
-- Integration tests para endpoints
-
-## 2️⃣ Wrapper Swagger genérico
-
-Reducir repetición creando un wrapper reutilizable para IResponse<T>.
-
-## 3️⃣ Logging estructurado
-
-#### Agregar:
-
-- Correlation ID
-- Logs por capa
-- Logger centralizado
-
-## 4️⃣ Observabilidad
-
-#### Integración futura con:
-- OpenTelemetry
-- Health checks
-- Métricas
-
-# 🧠 Conclusión
-
-#### Este backend está diseñado para:
-
-- Escalar
-- Ser mantenible
-- Estar desacoplado
-- Ser testeable
-- Tener contratos claros
-- Mantener independencia del framework
-
-No es un CRUD simple.
-Es una implementación con arquitectura formal y estándares definidos.
+- Extraer el módulo `orders` como microservicio independiente
+- Reemplazar MongoDB por otro motor de persistencia
+- Migrar WebSocket a un broker de eventos
+- Escalar horizontalmente sin modificar el dominio
