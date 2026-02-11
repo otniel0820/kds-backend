@@ -26,4 +26,5 @@ export interface OrdersRepositoryPort {
     orders: OrderListDto[];
     total: number;
   }>;
+  findItemUpdateById(id: string): Promise<OrderListDto | null>;
 }

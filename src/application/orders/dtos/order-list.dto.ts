@@ -9,4 +9,5 @@ export type OrderListDto = {
   status: OrderStatus;
   priority: OrderPriority;
   activeTimer?: string;
+  courierName?: string;
 };
