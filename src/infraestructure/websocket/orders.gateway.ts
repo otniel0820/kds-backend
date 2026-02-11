@@ -1,6 +1,6 @@
 import { WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
 import { Server } from 'socket.io';
-import { OrderListDto } from 'src/application/orders/dtos';
+import { OrderSummary } from 'src/application/orders/contracts/output/order-symary.output';
 
 import { variables } from 'src/config';
 
@@ -17,10 +17,10 @@ export class OrdersGateway {
   @WebSocketServer()
   server: Server;
 
-  emitOrderCreated(payload: OrderListDto): void {
+  emitOrderCreated(payload: OrderSummary): void {
     this.server.emit('order.created', payload);
   }
-  emitOrderStatusUpdated(payload: OrderListDto): void {
+  emitOrderStatusUpdated(payload: OrderSummary): void {
     this.server.emit('order.status.updated', payload);
   }
 }
