@@ -1,14 +1,14 @@
-import { OrderStatus } from '../value-objects/order-state.vo';
+import { OrderStatus } from '../value-objects/order-status.vo';
 import { OrderPriority } from '../value-objects/order-priority.vo';
 import { OrderTimers } from '../value-objects';
-import { assertOrderTransition, applyOrderTimer } from '../services';
+import { assertOrderTransition } from '../services';
 
 export type OrderItem = {
   productId: string;
   qty: number;
 };
 
-export type OrderPrimitives = {
+type OrderProps = {
   id?: string;
   source: string;
   partner?: string;
@@ -28,61 +28,55 @@ export type OrderPrimitives = {
 };
 
 export class OrderEntity {
-  private props: OrderPrimitives;
+  private props: OrderProps;
 
-  constructor(props: OrderPrimitives) {
-    this.props = props;
+  constructor(props: OrderProps) {
+    this.props = { ...props };
   }
 
   get id(): string | undefined {
     return this.props.id;
   }
 
-  get status(): string | undefined {
+  get status(): OrderStatus {
     return this.props.status;
   }
 
-  toPrimitives(): OrderPrimitives {
-    return { ...this.props };
+  get displayNumber(): string {
+    return this.props.displayNumber;
   }
 
-  withDisplayNumber(displayNumber: string): OrderEntity {
-    return new OrderEntity({
-      ...this.props,
-      displayNumber,
-    });
+  get priority(): OrderPriority {
+    return this.props.priority;
   }
 
-  transitionTo(next: OrderStatus): OrderEntity {
-    assertOrderTransition(this.props.status, next);
-
-    const now = new Date();
-
-    const updatedTimers = applyOrderTimer(this.props.timers, next, now);
-    let courierName = this.props.courierName;
-
-    if (next === OrderStatus.READY && !courierName) {
-      courierName = this.generateCourierName();
-    }
-
-    return new OrderEntity({
-      ...this.props,
-      status: next,
-      timers: updatedTimers,
-      courierName,
-      updatedAt: now,
-    });
+  get items(): OrderItem[] {
+    return [...this.props.items];
   }
 
-  updateStatus(next: OrderStatus): void {
+  transitionTo(next: OrderStatus): void {
     const current = this.props.status;
 
     if (current === next) return;
 
     assertOrderTransition(current, next);
 
+    const now = new Date();
+
     this.props.status = next;
+    this.props.timers.applyTransition(next, now);
+    this.props.updatedAt = now;
+
+    if (next.equals(OrderStatus.from('READY')) && !this.props.courierName) {
+      this.props.courierName = this.generateCourierName();
+    }
   }
+
+  updateDisplayNumber(displayNumber: string): void {
+    this.props.displayNumber = displayNumber;
+    this.props.updatedAt = new Date();
+  }
+
   static createFromIngest(input: {
     source: string;
     partner?: string;
@@ -101,20 +95,28 @@ export class OrderEntity {
       partner: input.partner,
       externalId: input.externalId,
       displayNumber: OrderEntity.generateDisplayNumber(),
-      priority: input.priority ?? OrderPriority.NORMAL,
+      priority: input.priority ?? OrderPriority.from('NORMAL'),
       customerName: input.customerName,
       customerPhone: input.customerPhone,
       deliveryAddress: input.deliveryAddress,
       notes: input.notes,
-      status: OrderStatus.RECEIVED,
+      status: OrderStatus.from('RECEIVED'),
       items: input.items,
-      timers: {
-        placedAt: now,
-      },
+      timers: new OrderTimers({ placedAt: now }),
       createdAt: now,
       updatedAt: now,
     });
   }
+
+  toPrimitives() {
+    return {
+      ...this.props,
+      status: this.props.status.toString(),
+      priority: this.props.priority.toString(),
+      timers: this.props.timers.toPrimitives(),
+    };
+  }
+
   private generateCourierName(): string {
     const couriers = [
       'Carlos Rodriguez',
