@@ -1,6 +1,7 @@
-import { IUpdateOrderWebhookDto } from 'src/infraestructure/http/orders/dtos';
+import { OrderStatus } from 'src/domain/orders/value-objects/order-status.vo';
 import { OrdersRepositoryPort } from '../ports/order-repository.port';
 import { OrderEventsPort } from '../ports/order-events.port';
+import { UpdateOrderStatusWebhookInput } from '../contracts/input/update-order-status-webhook.input';
 
 export class UpdateOrderStatusByExternalIdUseCase {
   constructor(
@@ -8,7 +9,7 @@ export class UpdateOrderStatusByExternalIdUseCase {
     private readonly events: OrderEventsPort,
   ) {}
 
-  async execute(input: IUpdateOrderWebhookDto): Promise<void> {
+  async execute(input: UpdateOrderStatusWebhookInput): Promise<void> {
     const results = await this.ordersRepo.findByFilter({
       source: input.source,
       externalId: input.externalId,
@@ -16,17 +17,13 @@ export class UpdateOrderStatusByExternalIdUseCase {
 
     const order = results[0];
 
-    order.updateStatus(input.toStatus);
+    const nextStatus = OrderStatus.from(input.toStatus);
 
-    const updated = await this.ordersRepo.update(order);
+    order.transitionTo(nextStatus);
 
-    const projection = await this.ordersRepo.findItemUpdateById(
-      updated.toPrimitives().id!,
-    );
+    await this.ordersRepo.update(order);
 
-    if (!projection) {
-      throw new Error('KDS_ORDER_E0008');
-    }
+    const projection = await this.ordersRepo.findItemUpdateById(order.id!);
 
     await this.events.orderStatusUpdated(projection);
   }

@@ -1,4 +1,7 @@
-import { OrderStatus } from 'src/domain/orders';
+import {
+  OrderStatus,
+  OrderStatusValue,
+} from 'src/domain/orders/value-objects/order-status.vo';
 import { OrdersRepositoryPort } from '../ports/order-repository.port';
 import { buildResponse } from 'src/common/builders/response.builder';
 import { IResponse } from 'src/common/schemas';
@@ -8,12 +11,19 @@ export class UpdateOrderStatusUseCase {
 
   async execute(input: {
     id: string;
-    toStatus: OrderStatus;
+    toStatus: OrderStatusValue;
   }): Promise<IResponse<null>> {
     const order = await this.repo.findById(input.id);
-    if (!order) throw new Error('ORDER_NOT_FOUND');
 
-    await this.repo.update(order.transitionTo(input.toStatus));
+    if (!order) {
+      throw new Error('ORDER_NOT_FOUND');
+    }
+
+    const nextStatus = OrderStatus.from(input.toStatus);
+
+    order.transitionTo(nextStatus);
+
+    await this.repo.update(order);
 
     return buildResponse('KDS_ORD_R0004');
   }

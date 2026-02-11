@@ -1,7 +1,7 @@
 import { OrderEntity } from 'src/domain/orders';
 import { OrderStatus } from 'src/domain/orders';
-import { OrderDetailDto } from '../dtos/order-details.dto';
-import { OrderListDto } from '../dtos';
+import { OrderSummary } from '../contracts/output/order-symary.output';
+import { OrderDetailOutput } from '../contracts/output/order-detail.output';
 
 export type OrderFilter = {
   id?: string;
@@ -21,10 +21,10 @@ export interface OrdersRepositoryPort {
   findByFilter(filter: OrderFilter): Promise<OrderEntity[]>;
   create(order: OrderEntity): Promise<OrderEntity>;
   update(order: OrderEntity): Promise<OrderEntity>;
-  findDetailProjection(id: string): Promise<OrderDetailDto | null>;
+  findDetailProjection(id: string): Promise<OrderDetailOutput | null>;
   findList(filter: OrderFilter): Promise<{
-    orders: OrderListDto[];
+    orders: OrderSummary[];
     total: number;
   }>;
-  findItemUpdateById(id: string): Promise<OrderListDto | null>;
+  findItemUpdateById(id: string): Promise<OrderSummary>;
 }
