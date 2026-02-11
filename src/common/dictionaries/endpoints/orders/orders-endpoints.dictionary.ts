@@ -19,6 +19,11 @@ export const ordersEndpoints = {
     version: 'v1',
     description: 'Get order detail',
   },
+  UPDATE_ORDER_WEBHOOK_V1: {
+    path: 'order/update-status',
+    version: 'v1',
+    description: 'Update order status',
+  },
 } as const;
 
 export type IEndpointKey = keyof typeof ordersEndpoints;
